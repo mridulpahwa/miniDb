@@ -53,7 +53,7 @@ void BTree::display()
     std::cout << std::endl;
 }
 
-void BTree::insert(int key, int value)
+void BTree::insert(int key, Row *row)
 {
     //If the root node is full, we need to split it
     if (root -> numKeys == root -> maxKeys)
@@ -66,10 +66,10 @@ void BTree::insert(int key, int value)
         root = newNode;
     }
 
-    insertNonFull(root, key, value);
+    insertNonFull(root, key, row);
 }
 
-void BTree::insertNonFull(BTreeNode *node, int key, int value)
+void BTree::insertNonFull(BTreeNode *node, int key, Row *row)
 {
     int i = node -> numKeys -1;
 
@@ -80,10 +80,12 @@ void BTree::insertNonFull(BTreeNode *node, int key, int value)
         while (i >= 0 && key < node -> keys[i])
         {
             node -> keys[i+1] = node -> keys[i];
+            node -> row[i+1] = node -> row[i];
             i--;
         }
         node -> keys[i+1] = key;
-        node -> numKeys += 1;
+        node -> row[i+1] = row;
+        node -> numKeys++;
     }
     else
     //Find the child that should have the key
@@ -102,7 +104,7 @@ void BTree::insertNonFull(BTreeNode *node, int key, int value)
                 i++;
         }
     
-        insertNonFull(node -> children[i], key, value);
+        insertNonFull(node -> children[i], key, row);
     }
 }
 
@@ -116,6 +118,7 @@ void BTree::splitChild(BTreeNode *parent, int childIndex, BTreeNode* child)
     for(int i =0; i<t-1 ; i++)
     {
         newChild -> keys[i] = child-> keys[i+t];
+        newChild -> row[i] = child -> row[i+t];
     }
 
     // copy the last children if the child is not a leaf
@@ -128,18 +131,22 @@ void BTree::splitChild(BTreeNode *parent, int childIndex, BTreeNode* child)
     child -> numKeys = t-1;
 
     for (int i = parent->numKeys; i >= childIndex +1; i--)
+    {
         parent -> children[i+1] = parent ->children[i];
+    }
 
+    // Insert the new child into the parent's children array
     parent->children[childIndex + 1] = newChild;
 
     for (int i = parent -> numKeys -1; i >= childIndex; i--)
+    {
         parent -> keys[i+1] = parent->keys[i];
+        parent -> row[i+1] = parent -> row[i];
+    }
 
     parent->keys[childIndex] = child -> keys[t-1];
+    parent -> row[childIndex] = child -> row[t-1];
     parent -> numKeys +=1;
-    
-
-
 }
 
 BTreeNode* BTree::search(int key)
@@ -172,6 +179,67 @@ BTreeNode* BTree::searchRecursive(BTreeNode* node, int key)
 
     return searchRecursive(node -> children[i], key);
     
+}
+
+void BTree::insertRow(const Row& row)
+{
+    // Extracting the key(assuming first column is primary key)
+    int key = row.getPrimaryKey();
+
+    // if the root node is full, split it
+    if (root -> numKeys == root -> maxKeys)
+    {
+        BTreeNode* newNode = new BTreeNode(t, false);
+        newNode -> children[0] = root;
+        root -> parent = newNode;
+
+        splitChild(newNode, 0, root);
+        root = newNode; 
+    }
+
+    //Insert row into correct position in the tree
+    insertRowNonFull(root, key, row);
+}
+
+void BTree::insertRowNonFull(BTreeNode *node, int key,const Row& row)
+{
+    int i = node -> numKeys - 1;
+
+    // if node is a lead, insert it directly
+    if (node -> leaf)
+    {
+        while ( i >= 0 && key < node -> keys[i])
+        {
+            node -> keys[i+1] = node -> keys[i];
+            node -> row[i+1] = node -> row[i];
+            i--;
+        }
+
+        node -> keys[i + 1] = key;
+        node -> row[i + 1] = new Row(row);
+        node -> numKeys++;
+    }
+    else
+    {
+        //Find the chid for the key
+        while (i >= 0 && key < node -> keys[i])
+            i--;
+        
+        i++;
+
+        //if the child is full, split it!
+        if (node -> children[i] -> numKeys == 2 * t - 1 )
+        {
+            splitChild(node, i, node -> children[i]);
+
+            //After the split, decide which child to insert the row into
+            if(key > node -> keys[i])
+                i++;
+        }
+
+        insertRowNonFull( node -> children[i], key, row);
+        
+    }
 }
 
 void BTree::deleteKey(int key)

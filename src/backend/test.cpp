@@ -1,96 +1,60 @@
 #include <iostream>
 #include "BTree.h"
+#include "Row.h"
+#include "BTreeNode.h"
 
-int main()
-{
-    // Test Case 1: Small Tree
-    BTree btree1(2);
-    btree1.insert(5, 50);
-    btree1.insert(10, 100);
-    btree1.insert(20, 200);
+void testInsertAndTable() {
+    // Create a BTree with degree 3 (example)
+    BTree bTree(3);
 
-    std::cout << "BTree after insertions:\n";
-    btree1.display();
+    // Create some rows
+    Row row1, row2, row3;
+    row1.setColumn("id", 1); // Primary Key
+    row1.setColumn("name", std::string("Alice"));
+    row1.setColumn("age", 20);
 
-    std::cout << "\nDeleting key 5:\n";
-    btree1.deleteKey(5);
-    btree1.display();
+    row2.setColumn("id", 2); // Primary Key
+    row2.setColumn("name", std::string("Bob"));
+    row2.setColumn("age", 25);
 
-    std::cout << "\nDeleting key 10:\n";
-    btree1.deleteKey(10);
-    btree1.display();
+    row3.setColumn("id", 3); // Primary Key
+    row3.setColumn("name", std::string("Charlie"));
+    row3.setColumn("age", 22);
 
-    std::cout << "\nDeleting key 20:\n";
-    btree1.deleteKey(20);
-    btree1.display();
+    // Insert rows into the BTree
+    std::cout << "Inserting rows into the BTree...\n";
+    bTree.insertRow(row1);
+    bTree.insertRow(row2);
+    bTree.insertRow(row3);
 
-    // Test Case 2: Multi-Level Tree with Borrowing
-    BTree btree2(2);
-    btree2.insert(20, 200);
-    btree2.insert(10, 100);
-    btree2.insert(30, 300);
-    btree2.insert(5, 50);
-    btree2.insert(15, 150);
-    btree2.insert(25, 250);
-    btree2.insert(35, 350);
+    // Display the tree to verify insertion
+    std::cout << "BTree after row insertions:\n";
+    bTree.display();
+}
 
-    std::cout << "\nBTree after insertions:\n";
-    btree2.display();
+void testRowRetrieval() {
+    BTree bTree(3);
 
-    std::cout << "\nDeleting key 5:\n";
-    btree2.deleteKey(5);
-    btree2.display();
+    // Insert some rows
+    Row row1, row2;
+    row1.setColumn("id", 1); // Primary Key
+    row1.setColumn("name", std::string("Alice"));
+    row1.setColumn("age", 20);
 
-    std::cout << "\nDeleting key 25:\n";
-    btree2.deleteKey(25);
-    btree2.display();
+    row2.setColumn("id", 2); // Primary Key
+    row2.setColumn("name", std::string("Bob"));
+    row2.setColumn("age", 25);
 
-    std::cout << "\nDeleting key 20:\n";
-    btree2.deleteKey(20);
-    btree2.display();
+    bTree.insertRow(row1);
+    bTree.insertRow(row2);
 
-    // Test Case 3: Merging Nodes
-    BTree btree3(2);
-    btree3.insert(10, 100);
-    btree3.insert(20, 200);
-    btree3.insert(30, 300);
-    btree3.insert(5, 50);
-    btree3.insert(15, 150);
-    btree3.insert(25, 250);
-    btree3.insert(35, 350);
-    btree3.insert(40, 400);
+}
 
-    std::cout << "\nBTree after insertions:\n";
-    btree3.display();
+int main() {
+    std::cout << "Running tests for BTree and Row functionalities...\n";
 
-    std::cout << "\nDeleting key 40:\n";
-    btree3.deleteKey(40);
-    btree3.display();
+    testInsertAndTable();
 
-    std::cout << "\nDeleting key 35:\n";
-    btree3.deleteKey(35);
-    btree3.display();
-
-    std::cout << "\nDeleting key 30:\n";
-    btree3.deleteKey(30);
-    btree3.display();
-
-    std::cout << "\nDeleting key 25:\n";
-    btree3.deleteKey(25);
-    btree3.display();
-
-    // Test Case 4: Nonexistent Key
-    BTree btree4(2);
-    btree4.insert(10, 100);
-    btree4.insert(20, 200);
-    btree4.insert(5, 50);
-
-    std::cout << "\nBTree after insertions:\n";
-    btree4.display();
-
-    std::cout << "\nDeleting key 100 (nonexistent):\n";
-    btree4.deleteKey(100);
-    btree4.display();
-
+    std::cout << "All tests complete.\n";
     return 0;
 }

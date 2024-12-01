@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <chrono> // this is for calculating the time
 
+#include "C:\Users\HP\db_engine\src\backend\BTree.h"
+
 #define FAIL    "\e[0;31m"
 #define SUCCESS "\e[0;32m"
 #define DEFAULT "\e[0;37m"
@@ -206,6 +208,9 @@ std::unordered_map <std::string , TOKEN_SET> KEYWORD_MAP = {
 
 
 };
+
+std::unordered_map<std::string, BTree*> TABLE_MAP;
+
 
 class Lexer
 {
@@ -461,11 +466,16 @@ class Parser
     bool syntaxError;
     AST_NODE * EVALUATED_NODE;
 
+    public:
     PARSER_STATUS throwSyntaxError()
     {
         std::cout << FAIL << "[!] SYNTAX ERROR : UNEXPECTED TOKEN : " << tokenTypeToString(CURRENT_TOKEN->TOKEN_TYPE) << DEFAULT << std::endl;
         exit(0); 
         return PARSER_FAIL;
+    }
+
+    AST_NODE* getEvaluatedNode() {
+        return EVALUATED_NODE;
     }
 
     void check(TOKEN_SET REQUIRED_CHECK_TOKEN)
@@ -641,7 +651,7 @@ class Parser
         /*
         SYNTAX FOR SEARCH
         SEARCH IN <T_NAME>
-        WHERE (CONDITION)
+        WHERE (key)
         */
        EVALUATED_NODE = new AST_NODE;
        EVALUATED_NODE->NODE_TYPE = NODE_SEARCH;
@@ -649,10 +659,25 @@ class Parser
        proceed(TOKEN_IN);
        EVALUATED_NODE -> PAYLOAD = &checkAndProceed(TOKEN_ID) -> VALUE;
        proceed(TOKEN_WHERE);
-       EVALUATED_NODE -> CHILDREN.push_back(parseCONDITION());
-
-       check(TOKEN_END_OF_INPUT);
-       return PARSER_SUCCESS;
+       proceed(TOKEN_LEFT_PAREN);
+        while (true)
+        {
+            // THIS IS CHECK FOR EMPTY INSERT
+            if(CURRENT_TOKEN->TOKEN_TYPE == TOKEN_END_OF_INPUT)
+                throwSyntaxError();
+            if (CURRENT_TOKEN->TOKEN_TYPE != TOKEN_INTEGER && CURRENT_TOKEN->TOKEN_TYPE != TOKEN_STRING)
+                throwSyntaxError();
+            EVALUATED_NODE->CHILDREN.push_back(parseCHILDREN());
+            
+            if (CURRENT_TOKEN->TOKEN_TYPE == TOKEN_RIGHT_PAREN)
+            {
+                proceed(TOKEN_RIGHT_PAREN);
+                break;
+            }
+        }
+        
+        check(TOKEN_END_OF_INPUT);
+        return PARSER_SUCCESS;
 
     }
 
@@ -770,13 +795,15 @@ class EvaluationWrapper
     Lexer * MAIN_LEXER;
     Parser * MAIN_PARSER;
     int commandCount;
-    public :
+    BTree* btree;
 
+    public :
     EvaluationWrapper()
     {
         MAIN_LEXER = new Lexer();
         MAIN_PARSER = new Parser();
         commandCount = 0;
+        btree = nullptr;
     }
 
     void handle(std::string InputBuffer)
@@ -791,6 +818,12 @@ class EvaluationWrapper
         {
             MAIN_PARSER -> initialize(MAIN_LEXER ->getTokenStream());
             CURRENT_PARSER_STATUS = MAIN_PARSER -> parse();
+
+            if (CURRENT_PARSER_STATUS == PARSER_SUCCESS)
+            {
+                executeParsedCommand();
+            }
+            
         }
         
         auto endTimer = std::chrono::high_resolution_clock::now();
@@ -807,7 +840,141 @@ class EvaluationWrapper
             std::cout << SUCCESS << "$ Command ID : " << commandCount << " executed in " << timeconsumed.count() <<" ms\n\n" << DEFAULT ;
         
     }
+
+    void executeParsedCommand()
+{
+    AST_NODE* parsedNode = MAIN_PARSER -> getEvaluatedNode();
+
+    if (!parsedNode)
+    {
+        std::cout << FAIL << "No Valid command to execute!!" << DEFAULT << std::endl;
+        return;
+    } 
+
+    switch (parsedNode -> NODE_TYPE)
+    {
+        case NODE_CREATE_TABLE: 
+        {
+            std::string tableName = *(parsedNode -> PAYLOAD);
+
+            if(TABLE_MAP.find(tableName) != TABLE_MAP.end())
+            {
+                std::cout << FAIL << "Error: Table '" << tableName << "' already exists.\n" << DEFAULT;
+                return;
+            }
+            std::cout << "Creating a BTree...\n";
+            int degree = 3;
+            btree = new BTree(degree);
+
+            TABLE_MAP[tableName] = btree;
+            break;
+
+        }
+        case NODE_INSERT:
+        {
+            std::string tableName = (*parsedNode -> PAYLOAD);
+
+            //check if table exists
+            if (TABLE_MAP.find(tableName) == TABLE_MAP.end())
+            {
+                std::cout << FAIL << "Error: Table '" << tableName << "' does not exist.\n" << DEFAULT;
+            }
+
+            const std::vector<std::string> columnNames = {"ID", "Name", "PantherID"};
+
+             if (parsedNode->CHILDREN.size() != columnNames.size()) 
+             {
+            std::cout << "Error: Mismatched number of values. Expected " << columnNames.size() << " values.\n";
+            }       
+
+            Row newRow;
+            // Check for primary key uniqueness
+            const std::string& primaryKey = *(parsedNode -> CHILDREN[0] -> PAYLOAD);
+
+            if (TABLE_MAP[tableName] -> search(std::stoi(primaryKey)) != nullptr)
+            {
+                std::cout << "ID must be unique," << primaryKey << " has been used before"; 
+                break;
+            }
+            for (int i =0; i < columnNames.size(); i++)
+            {
+                const std::string& value = *(parsedNode -> CHILDREN[i] -> PAYLOAD);
+
+                try
+                {
+                    if (i==0 || i == 2)
+                        newRow.setColumn(columnNames[i], std::stoi(value));
+                    else
+                        newRow.setColumn(columnNames[i], value);
+                }
+                catch(const std::exception& e)
+                {
+                    std::cout << "Error: Failed to parse value for column '" << columnNames[i] << "': " << value << "\n";
+                }
+            }    
+            TABLE_MAP[tableName]->insertRow(newRow);
+            std::cout << "Successfully inserted row into table" << tableName; 
+            break;
+        }
+        case NODE_SEARCH:
+        {
+
+            std::string tableName = (*parsedNode -> PAYLOAD);
+            int primarykey = std::stoi(*(parsedNode->CHILDREN[0]->PAYLOAD));
+
+            if (TABLE_MAP.find(tableName) == TABLE_MAP.end())
+            {
+                std::cout << FAIL << "Error: Table '" << tableName << "' does not exist.\n" << DEFAULT;
+                return;
+            }
+            
+            BTreeNode* result = TABLE_MAP[tableName] -> search(primarykey);
+            if (result != nullptr)
+            {
+                Row searchRow = *(*result -> row);
+                try {
+                    // Use std::visit to print each column value
+                    std::visit([](auto&& value) {
+                        std::cout << "ID: " << value << std::endl;
+                    }, searchRow.getColumn("ID"));
+
+                    std::visit([](auto&& value) {
+                        std::cout << "Name: " << value << std::endl;
+                    }, searchRow.getColumn("Name"));
+
+                    std::visit([](auto&& value) {
+                        std::cout << "PantherId: " << value << std::endl;
+                    }, searchRow.getColumn("PantherID"));
+
+                } catch (const std::exception& e) {
+                    std::cout << "Error accessing column: " << e.what() << "\n";
+                }
+    
+            }
+            else
+            {
+                std::cout << "Row with primary key " << primarykey << " not found.\n";
+            }
+            break;
+
+        }
+        case NODE_DELETE:
+        {
+
+        }
+        case NODE_UPDATE:
+        {
+
+        }
+        
+
+        default: 
+        std::cout << FAIL << "Unsupported command type: " << nodeTypeToString(parsedNode->NODE_TYPE) << DEFAULT << std::endl;
+    }
+}
 };
+
+
 
 int main()
 {

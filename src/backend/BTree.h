@@ -13,13 +13,15 @@ class BTree
     BTree(int t);
     BTreeNode* search(int key);
 
-    void insert (int key, int value);
+    void insert (int key, Row *row);
     void display();
     void deleteKey(int key);
+    void insertRow(const Row& row);
 
     private:
-    void insertNonFull(BTreeNode *node, int key, int value);
+    void insertNonFull(BTreeNode *node, int key, Row *row);
     void splitChild(BTreeNode *parent, int i, BTreeNode *fullChild);
+    void insertRowNonFull(BTreeNode *node, int key, const Row& row);
     BTreeNode* searchRecursive(BTreeNode* node, int key);
     //helper methods for deletion
     void deleteRecursive(BTreeNode* node, int key);
