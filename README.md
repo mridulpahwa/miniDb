@@ -1,4 +1,4 @@
-*miniDB (C++)*
+# miniDB (C++)
 
 This project implements a lightweight relational database engine in C++ using B-Trees for efficient data storage and retrieval. It supports essential CRUD operations (CREATE, READ, UPDATE, DELETE) and integrates a custom SQL-like interface. Key functionalities include:
 
@@ -10,7 +10,7 @@ Learned:
 Backend development and system design principles for relational database systems.
 Advanced data structure implementation, particularly B-Trees.
 Tokenization, parsing, and AST construction for SQL-like syntax.
-*What's next?*
+# What's next?
 
 Implement multi-threading to improve query performance.
 Add indexing for faster search and retrieval of rows.
