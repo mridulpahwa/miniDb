@@ -25,11 +25,11 @@ Row::ColumnValue Row::getColumn(const std::string& columnName) const
 // Get the primary key (must be an integer)
 int Row::getPrimaryKey() const {
     // Find the "id" column
-    auto it = columns.find("id");
+    auto it = columns.find("ID");
 
     // Ensure the "id" column exists and is an integer
     if (it != columns.end() && std::holds_alternative<int>(it->second)) {
         return std::get<int>(it->second);
     }
-    return 1;
+    throw std::invalid_argument("Primary key 'id' is missing or is not an integer.");
 }

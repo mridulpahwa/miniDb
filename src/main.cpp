@@ -694,10 +694,25 @@ class Parser
        proceed(TOKEN_FROM);
        EVALUATED_NODE -> PAYLOAD = &checkAndProceed(TOKEN_ID) -> VALUE;
        checkAndProceed(TOKEN_WHERE);
-       EVALUATED_NODE -> CHILDREN.push_back(parseCONDITION());
-       
-       check(TOKEN_END_OF_INPUT);
-       return PARSER_SUCCESS;
+       proceed(TOKEN_LEFT_PAREN);
+       while (true)
+        {
+            // THIS IS CHECK FOR EMPTY INSERT
+            if(CURRENT_TOKEN->TOKEN_TYPE == TOKEN_END_OF_INPUT)
+                throwSyntaxError();
+            if (CURRENT_TOKEN->TOKEN_TYPE != TOKEN_INTEGER && CURRENT_TOKEN->TOKEN_TYPE != TOKEN_STRING)
+                throwSyntaxError();
+            EVALUATED_NODE->CHILDREN.push_back(parseCHILDREN());
+            
+            if (CURRENT_TOKEN->TOKEN_TYPE == TOKEN_RIGHT_PAREN)
+            {
+                proceed(TOKEN_RIGHT_PAREN);
+                break;
+            }
+        }
+        
+        check(TOKEN_END_OF_INPUT);
+        return PARSER_SUCCESS;
 
 
 
@@ -960,7 +975,22 @@ class EvaluationWrapper
         }
         case NODE_DELETE:
         {
+            std::string tableName = *(parsedNode -> PAYLOAD);
+            int primaryKey = std::stoi(*(parsedNode->CHILDREN[0]->PAYLOAD));
+            
+             if (TABLE_MAP.find(tableName) == TABLE_MAP.end()) 
+             {
+            std::cout << FAIL << "Error: Table '" << tableName << "' does not exist.\n" << DEFAULT;
+            return;
+            }
 
+            BTree * tableTree = TABLE_MAP[tableName];
+
+            std::cout << "Attempting to delete row with primary key " << primaryKey << " from table '" << tableName << "'...\n";
+            tableTree-> deleteKey(primaryKey);
+
+            std::cout << SUCCESS << "Successfully deleted row with primary key " << primaryKey << " from table: " << tableName << "\n" << DEFAULT;
+            break;
         }
         case NODE_UPDATE:
         {

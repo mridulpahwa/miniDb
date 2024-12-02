@@ -183,7 +183,7 @@ BTreeNode* BTree::searchRecursive(BTreeNode* node, int key)
 
 void BTree::insertRow(const Row& row)
 {
-    // Extracting the key(assuming first column is primary key)
+    // Extracting the key(assuming first column is primary key) 
     int key = row.getPrimaryKey();
 
     // if the root node is full, split it
