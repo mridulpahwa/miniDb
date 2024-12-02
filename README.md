@@ -12,6 +12,6 @@ Advanced data structure implementation, particularly B-Trees.
 Tokenization, parsing, and AST construction for SQL-like syntax.
 # What's next?
 
-Implement multi-threading to improve query performance.
+- Implement multi-threading to improve query performance.
 Add indexing for faster search and retrieval of rows.
 Build a frontend interface for interactive database operations.
