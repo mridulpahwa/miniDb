@@ -79,6 +79,7 @@ typedef enum
     TOKEN_ID,
     TOKEN_EXIT,
     TOKEN_END_OF_INPUT,
+    TOKEN_KEY,
     } TOKEN_SET; 
 
 typedef enum
@@ -167,6 +168,7 @@ std::string tokenTypeToString(TOKEN_SET REQUIRED_TOKEN){
         case TOKEN_ID           : return "TOKEN_ID";
         case TOKEN_EXIT         : return "TOKEN_EXIT";
         case TOKEN_END_OF_INPUT : return "TOKEN_END_OF_INPUT";
+        case TOKEN_KEY          : return "TOKEN_KEY";
         
     }
     return "[!] ERROR : UNIDENTIFIED TOKEN:" + REQUIRED_TOKEN;
@@ -189,6 +191,7 @@ std::unordered_map <std::string , TOKEN_SET> KEYWORD_MAP = {
     {"where"   , TOKEN_WHERE},
     {"with"    , TOKEN_WITH},
     {"exit"    , TOKEN_EXIT},
+    {"key"     , TOKEN_KEY},
     {"INSERT"  , TOKEN_INSERT},
     {"INTO"    , TOKEN_INTO},
     {"VALUE"   , TOKEN_VALUE},
@@ -205,8 +208,7 @@ std::unordered_map <std::string , TOKEN_SET> KEYWORD_MAP = {
     {"WHERE"   , TOKEN_WHERE},
     {"WITH"    , TOKEN_WITH},
     {"EXIT"    , TOKEN_EXIT},
-
-
+    {"KEY"    , TOKEN_KEY},
 };
 
 std::unordered_map<std::string, BTree*> TABLE_MAP;
@@ -651,7 +653,7 @@ class Parser
         /*
         SYNTAX FOR SEARCH
         SEARCH IN <T_NAME>
-        WHERE (key)
+        WHERE (key == keyNumber)
         */
        EVALUATED_NODE = new AST_NODE;
        EVALUATED_NODE->NODE_TYPE = NODE_SEARCH;
@@ -660,6 +662,8 @@ class Parser
        EVALUATED_NODE -> PAYLOAD = &checkAndProceed(TOKEN_ID) -> VALUE;
        proceed(TOKEN_WHERE);
        proceed(TOKEN_LEFT_PAREN);
+       proceed(TOKEN_KEY);
+       proceed(TOKEN_EQUALS);
         while (true)
         {
             // THIS IS CHECK FOR EMPTY INSERT
@@ -695,6 +699,8 @@ class Parser
        EVALUATED_NODE -> PAYLOAD = &checkAndProceed(TOKEN_ID) -> VALUE;
        checkAndProceed(TOKEN_WHERE);
        proceed(TOKEN_LEFT_PAREN);
+       proceed(TOKEN_KEY);
+       proceed(TOKEN_EQUALS);
        while (true)
         {
             // THIS IS CHECK FOR EMPTY INSERT
