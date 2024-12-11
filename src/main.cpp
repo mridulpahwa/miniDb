@@ -732,7 +732,17 @@ class Parser
        proceed(TOKEN_UPDATE);
        EVALUATED_NODE -> PAYLOAD = &checkAndProceed(TOKEN_ID) -> VALUE;
        proceed(TOKEN_WHERE);
-       EVALUATED_NODE->CHILDREN.push_back(parseCONDITION());
+       proceed(TOKEN_LEFT_PAREN);
+       while (CURRENT_TOKEN -> TOKEN_TYPE != TOKEN_RIGHT_PAREN)
+        {
+            // THIS IS CHECK FOR EMPTY INSERT
+            if(CURRENT_TOKEN->TOKEN_TYPE == TOKEN_END_OF_INPUT)
+                throwSyntaxError();
+            if (CURRENT_TOKEN->TOKEN_TYPE != TOKEN_INTEGER && CURRENT_TOKEN->TOKEN_TYPE != TOKEN_STRING)
+                throwSyntaxError();
+            EVALUATED_NODE->CHILDREN.push_back(parseCHILDREN());
+        }
+       proceed(TOKEN_RIGHT_PAREN);
        proceed(TOKEN_WITH);
        proceed(TOKEN_LEFT_PAREN);
         while (true)
@@ -887,6 +897,7 @@ class EvaluationWrapper
         }
         case NODE_INSERT:
         {
+            int primarykey = std::stoi(*(parsedNode->CHILDREN[0]->PAYLOAD));
             std::string tableName = (*parsedNode -> PAYLOAD);
 
             //check if table exists
@@ -903,15 +914,7 @@ class EvaluationWrapper
             }       
 
             Row newRow;
-            // Check for primary key uniqueness
-            const std::string& primaryKey = *(parsedNode -> CHILDREN[0] -> PAYLOAD);
-
-            if (TABLE_MAP[tableName] -> search(std::stoi(primaryKey)) != nullptr)
-            {
-                std::cout << "ID must be unique," << primaryKey << " has been used before"; 
-                break;
-            }
-            for (int i =0; i < columnNames.size(); i++)
+             for (int i =0; i < columnNames.size(); i++)
             {
                 const std::string& value = *(parsedNode -> CHILDREN[i] -> PAYLOAD);
 
@@ -927,8 +930,16 @@ class EvaluationWrapper
                     std::cout << "Error: Failed to parse value for column '" << columnNames[i] << "': " << value << "\n";
                 }
             }    
-            TABLE_MAP[tableName]->insertRow(newRow);
-            std::cout << "Successfully inserted row into table" << tableName; 
+            // Check for primary key uniqueness
+            if (TABLE_MAP[tableName] -> search(primarykey) != nullptr)
+            {
+                std::cout << "ID must be unique," << primarykey << " has been used before"; 
+                break;
+            }
+            
+            TABLE_MAP[tableName]->insertRow(&newRow);
+            std::cout << "Successfully inserted row into table" << tableName << "  "; 
+            TABLE_MAP[tableName] -> display();
             break;
         }
         case NODE_SEARCH:
@@ -946,20 +957,37 @@ class EvaluationWrapper
             BTreeNode* result = TABLE_MAP[tableName] -> search(primarykey);
             if (result != nullptr)
             {
-                Row searchRow = *(*result -> row);
+                int index = -1;
+                for (int i = 0; i < result -> numKeys; i++)
+                {
+                    if (result -> keys[i] == primarykey)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+
+                if (index == -1)
+                {
+                    std::cout << "Error: Key " << primarykey << " not found in the returned node.\n";
+                    return;
+                }
+
+                Row* searchRow = result -> row[index];
+                
                 try {
                     // Use std::visit to print each column value
                     std::visit([](auto&& value) {
                         std::cout << "ID: " << value << std::endl;
-                    }, searchRow.getColumn("ID"));
+                    }, searchRow->getColumn("ID"));
 
                     std::visit([](auto&& value) {
                         std::cout << "Name: " << value << std::endl;
-                    }, searchRow.getColumn("Name"));
+                    }, searchRow->getColumn("Name"));
 
                     std::visit([](auto&& value) {
                         std::cout << "PantherId: " << value << std::endl;
-                    }, searchRow.getColumn("PantherID"));
+                    }, searchRow->getColumn("PantherID"));
 
                 } catch (const std::exception& e) {
                     std::cout << "Error accessing column: " << e.what() << "\n";
@@ -994,9 +1022,63 @@ class EvaluationWrapper
         }
         case NODE_UPDATE:
         {
+            std::string tableName = (*parsedNode -> PAYLOAD);
+            int primarykey = std::stoi(*(parsedNode->CHILDREN[0]->PAYLOAD));
+            const std::vector<std::string> columnNames = {"ID", "Name", "PantherID"};
+
+
+            if (TABLE_MAP.find(tableName) == TABLE_MAP.end())
+            {
+                std::cout << FAIL << "Error: Table '" << tableName << "' does not exist.\n" << DEFAULT;
+                return;
+            }
+
+            BTreeNode* result = TABLE_MAP[tableName] -> search(primarykey);
+            Row updateRow;
+
+            if (result != nullptr)
+            {
+                 for (int i =0; i < columnNames.size(); i++)
+            {
+                const std::string& value = *(parsedNode -> UPDATE_CHILDREN[i] -> PAYLOAD);
+
+                try
+                {
+                    if (i==0 || i == 2)
+                        updateRow.setColumn(columnNames[i], std::stoi(value));
+                    else
+                        updateRow.setColumn(columnNames[i], value);
+                }
+                catch(const std::exception& e)
+                {
+                    std::cout << "Error: Failed to parse value for column '" << columnNames[i] << "': " << value << "\n";
+                }
+            }   
+                try {
+                    // Use std::visit to print each column value
+                    std::visit([](auto&& value) {
+                        std::cout << "ID: " << value << std::endl;
+                    }, updateRow.getColumn("ID"));
+
+                    std::visit([](auto&& value) {
+                        std::cout << "Name: " << value << std::endl;
+                    }, updateRow.getColumn("Name"));
+
+                    std::visit([](auto&& value) {
+                        std::cout << "PantherId: " << value << std::endl;
+                    }, updateRow.getColumn("PantherID"));
+
+                } catch (const std::exception& e) {
+                    std::cout << "Error accessing column: " << e.what() << "\n";
+                }
+    
+
+            TABLE_MAP[tableName]->replace(primarykey, updateRow);
+            std::cout << "Successfully updated row into table" << tableName; 
+            break;
+            }
 
         }
-        
 
         default: 
         std::cout << FAIL << "Unsupported command type: " << nodeTypeToString(parsedNode->NODE_TYPE) << DEFAULT << std::endl;

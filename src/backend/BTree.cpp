@@ -10,11 +10,9 @@ BTree::BTree(int t)
 
 }
 
-void BTree::display()
-{
-    if (!root || root->numKeys == 0)
-    {
-        std::cout << "Tree is empty!!" << std::endl;
+void BTree::display() {
+    if (!root || root->numKeys == 0) {
+        std::cout << "Tree is empty!" << std::endl;
         return;
     }
 
@@ -22,30 +20,28 @@ void BTree::display()
     q.push(root);
     q.push(nullptr); // Level marker
 
-    while (!q.empty())
-    {
+    while (!q.empty()) {
         BTreeNode *node = q.front();
         q.pop();
 
-        if (node == nullptr)
-        {
+        if (node == nullptr) {
             // End of the current level
             std::cout << std::endl;
-            if (!q.empty())
-                q.push(nullptr); // Add level marker for next level
+            if (!q.empty()) {
+                q.push(nullptr); // Add level marker for the next level
+            }
             continue;
         }
 
-        for (int i = 0; i < node->numKeys; i++)
-        {
+        // Print all keys in the current node
+        for (int i = 0; i < node->numKeys; i++) {
             std::cout << node->keys[i] << " ";
         }
-        std::cout << "| ";
+        std::cout << "| "; // Separator for nodes
 
-        if (!node->leaf)
-        {
-            for (int i = 0; i <= node->numKeys; i++)
-            {
+        // Enqueue children if it's not a leaf
+        if (!node->leaf) {
+            for (int i = 0; i <= node->numKeys; i++) {
                 q.push(node->children[i]);
             }
         }
@@ -53,11 +49,13 @@ void BTree::display()
     std::cout << std::endl;
 }
 
+
 void BTree::insert(int key, Row *row)
 {
     //If the root node is full, we need to split it
     if (root -> numKeys == root -> maxKeys)
     {
+        std::cout << "Root is full. Splitting root..." << std::endl;
         BTreeNode *newNode = new BTreeNode(t, false);  // Create a new non-leaf node
         newNode -> children[0] = root;
         root -> parent = newNode;
@@ -67,6 +65,9 @@ void BTree::insert(int key, Row *row)
     }
 
     insertNonFull(root, key, row);
+    // Display tree structure after every insertion
+    std::cout << "Tree structure after inserting " << key << ":\n";
+    display();
 }
 
 void BTree::insertNonFull(BTreeNode *node, int key, Row *row)
@@ -86,6 +87,7 @@ void BTree::insertNonFull(BTreeNode *node, int key, Row *row)
         node -> keys[i+1] = key;
         node -> row[i+1] = row;
         node -> numKeys++;
+        std::cout << "Inserted key " << key << " in leaf node." << std::endl;
     }
     else
     //Find the child that should have the key
@@ -108,49 +110,63 @@ void BTree::insertNonFull(BTreeNode *node, int key, Row *row)
     }
 }
 
-void BTree::splitChild(BTreeNode *parent, int childIndex, BTreeNode* child)
-{
-    //Create a new node to hold the last (t-1) keys of the child
+void BTree::splitChild(BTreeNode *parent, int childIndex, BTreeNode *child) {
+    std::cout << "Splitting child at index " << childIndex << " with keys: ";
+    for (int i = 0; i < child->numKeys; i++) {
+        std::cout << child->keys[i] << " ";
+    }
+    std::cout << std::endl;
+
     BTreeNode *newChild = new BTreeNode(t, child->leaf);
-    newChild -> numKeys = t-1;
+    newChild->numKeys = t - 1;
 
-    //Copy the last (t-1) keys from the child to the new child
-    for(int i =0; i<t-1 ; i++)
-    {
-        newChild -> keys[i] = child-> keys[i+t];
-        newChild -> row[i] = child -> row[i+t];
+    // Move the second half of keys and rows to the new child
+    for (int i = 0; i < t - 1; i++) {
+        newChild->keys[i] = child->keys[i + t];
+        newChild->row[i] = child->row[i + t];
     }
 
-    // copy the last children if the child is not a leaf
-    if(!child -> leaf)
-    {
-        for (int i=0; i < t; i++)
-            newChild -> children[i] = child -> children[i+t];
+    // Move children if the child is not a leaf
+    if (!child->leaf) {
+        for (int i = 0; i < t; i++) {
+            newChild->children[i] = child->children[i + t];
+        }
     }
 
-    child -> numKeys = t-1;
+    child->numKeys = t - 1;
 
-    for (int i = parent->numKeys; i >= childIndex +1; i--)
-    {
-        parent -> children[i+1] = parent ->children[i];
+    // Update parent's children and keys
+    for (int i = parent->numKeys; i >= childIndex + 1; i--) {
+        parent->children[i + 1] = parent->children[i];
     }
-
-    // Insert the new child into the parent's children array
     parent->children[childIndex + 1] = newChild;
 
-    for (int i = parent -> numKeys -1; i >= childIndex; i--)
-    {
-        parent -> keys[i+1] = parent->keys[i];
-        parent -> row[i+1] = parent -> row[i];
+    for (int i = parent->numKeys - 1; i >= childIndex; i--) {
+        parent->keys[i + 1] = parent->keys[i];
+        parent->row[i + 1] = parent->row[i];
     }
 
-    parent->keys[childIndex] = child -> keys[t-1];
-    parent -> row[childIndex] = child -> row[t-1];
-    parent -> numKeys +=1;
+    parent->keys[childIndex] = child->keys[t - 1];
+    parent->row[childIndex] = child->row[t - 1];
+    parent->numKeys++;
+
+    std::cout << "Parent after split: ";
+    for (int i = 0; i < parent->numKeys; i++) {
+        std::cout << parent->keys[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "New child keys: ";
+    for (int i = 0; i < newChild->numKeys; i++) {
+        std::cout << newChild->keys[i] << " ";
+    }
+    std::cout << std::endl;
 }
 
 BTreeNode* BTree::search(int key)
 {
+    std::cout << "Searching for key: " << key << std::endl;
+
     if(!root)
     {
         std::cout<< "Tree is empty!" << std::endl;
@@ -163,7 +179,16 @@ BTreeNode* BTree::searchRecursive(BTreeNode* node, int key)
 {
     //Find the first key that is key>=key
     if (node == nullptr)
+    {
+        std::cout << "Key " << key << " not found (node is null)." << std::endl;
         return nullptr;
+    }
+
+    std::cout << "Visiting node with keys: ";
+    for (int i = 0; i < node->numKeys; i++) {
+        std::cout << node->keys[i] << " ";
+    }
+    std::cout << std::endl;
 
     int i = 0;
     while (i < node -> numKeys && key > node -> keys[i])
@@ -171,20 +196,26 @@ BTreeNode* BTree::searchRecursive(BTreeNode* node, int key)
 
     //if key is found, return the node
     if (i < node -> numKeys && key == node ->keys[i])
+    {
+        std::cout << "Key " << key << " found in node!" << std::endl;
         return node;
-    
+    }
     // if the key is not found and node is a leaf node
     if(node -> leaf)
+    {
+        std::cout << "Key " << key << " not found (reached leaf)." << std::endl;
         return nullptr;
-
+    }
+    std::cout << "Descending to child " << i << " of node." << std::endl;
     return searchRecursive(node -> children[i], key);
     
 }
 
-void BTree::insertRow(const Row& row)
+void BTree::insertRow(const Row* row)
 {
     // Extracting the key(assuming first column is primary key) 
-    int key = row.getPrimaryKey();
+    int key = row -> getPrimaryKey();
+    Row* newRow = new Row(*row);
 
     // if the root node is full, split it
     if (root -> numKeys == root -> maxKeys)
@@ -198,7 +229,7 @@ void BTree::insertRow(const Row& row)
     }
 
     //Insert row into correct position in the tree
-    insertRowNonFull(root, key, row);
+    insertRowNonFull(root, key, *newRow);
 }
 
 void BTree::insertRowNonFull(BTreeNode *node, int key,const Row& row)
@@ -540,4 +571,34 @@ void BTree::borrowFromRightSibling(BTreeNode* parent, int index, BTreeNode* chil
     }
 
     rightSibling -> numKeys--;
+}
+
+void BTree::replace(int key,const Row& newRow)
+{
+    //Finding the node where the key exists
+    BTreeNode* currentNode = root;
+    while (currentNode != nullptr)
+    {
+        int i=0;
+        while(i < currentNode -> numKeys && key > currentNode -> keys[i])
+        {
+            i++;
+        }
+
+        if (i < currentNode -> numKeys && key == currentNode -> keys[i])
+        {
+            // replace the row
+            currentNode -> row[i] = new Row(newRow);
+            std::cout << "Replace row for key" << key << "successfull .\n";
+            return;
+        }
+
+        //Descent into the appropriate child
+        if (currentNode -> leaf)
+            break; // key not found in leaf
+        else
+            currentNode = currentNode -> children[i];
+    }
+
+    throw std::invalid_argument( " Key not found in BTree for replacement");
 }

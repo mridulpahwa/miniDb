@@ -1,30 +1,26 @@
 #include "BTreeNode.h"
 
-BTreeNode::BTreeNode(int t, bool leaf)
-{
-    maxKeys = 2*t -1;
+BTreeNode::BTreeNode(int t, bool leaf) {
+    maxKeys = 2 * t - 1;
     keys = new int[maxKeys];
     row = new Row*[maxKeys];
     children = new BTreeNode*[maxKeys + 1];
+    for (int i = 0; i < maxKeys + 1; i++) {
+        children[i] = nullptr; // Initialize children to nullptr
+    }
     numKeys = 0;
-    this -> leaf = leaf;
+    this->leaf = leaf;
     parent = nullptr;
 }
 
-BTreeNode::BTreeNode(int maxKeys)
-{
-    this -> maxKeys = maxKeys;
-    this -> keys = new int[maxKeys];
-    this -> row = new Row *[maxKeys];
-    this -> children = new BTreeNode*[maxKeys + 1]; // one more child than keys (fundamental propery of Btree)
-    this -> numKeys = 0;
-    this -> leaf = true;
-    this -> parent = nullptr;
-}
-
-BTreeNode::~BTreeNode()
-{
+BTreeNode::~BTreeNode() {
+    for (int i = 0; i < numKeys; i++) {
+        delete row[i]; // Delete each Row object
+    }
+    for (int i = 0; i <= numKeys; i++) {
+        delete children[i]; // Delete each child node
+    }
     delete[] keys;
-    delete [] row;
+    delete[] row;
     delete[] children;
 }

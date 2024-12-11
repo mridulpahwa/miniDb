@@ -1,60 +1,56 @@
 #include <iostream>
 #include "BTree.h"
 #include "Row.h"
-#include "BTreeNode.h"
-
-void testInsertAndTable() {
-    // Create a BTree with degree 3 (example)
-    BTree bTree(3);
-
-    // Create some rows
-    Row row1, row2, row3;
-    row1.setColumn("id", 1); // Primary Key
-    row1.setColumn("name", std::string("Alice"));
-    row1.setColumn("age", 20);
-
-    row2.setColumn("id", 2); // Primary Key
-    row2.setColumn("name", std::string("Bob"));
-    row2.setColumn("age", 25);
-
-    row3.setColumn("id", 3); // Primary Key
-    row3.setColumn("name", std::string("Charlie"));
-    row3.setColumn("age", 22);
-
-    // Insert rows into the BTree
-    std::cout << "Inserting rows into the BTree...\n";
-    bTree.insertRow(row1);
-    bTree.insertRow(row2);
-    bTree.insertRow(row3);
-
-    // Display the tree to verify insertion
-    std::cout << "BTree after row insertions:\n";
-    bTree.display();
-}
-
-void testRowRetrieval() {
-    BTree bTree(3);
-
-    // Insert some rows
-    Row row1, row2;
-    row1.setColumn("id", 1); // Primary Key
-    row1.setColumn("name", std::string("Alice"));
-    row1.setColumn("age", 20);
-
-    row2.setColumn("id", 2); // Primary Key
-    row2.setColumn("name", std::string("Bob"));
-    row2.setColumn("age", 25);
-
-    bTree.insertRow(row1);
-    bTree.insertRow(row2);
-
-}
 
 int main() {
-    std::cout << "Running tests for BTree and Row functionalities...\n";
+    BTree tree(3); // Minimum degree 3
 
-    testInsertAndTable();
+    // Insert keys into the BTree
+    std::cout << "Inserting keys into the BTree..." << std::endl;
+    tree.insert(1, new Row());
+    tree.insert(2, new Row());
+    tree.insert(3, new Row());
+    tree.insert(4, new Row());
+    tree.insert(5, new Row());
+    tree.insert(6, new Row());
+    tree.insert(7, new Row());
+    tree.insert(8, new Row());
+    tree.insert(9, new Row());
+    tree.insert(10, new Row());
 
-    std::cout << "All tests complete.\n";
+    std::cout << "BTree structure after insertions:" << std::endl;
+    tree.display();
+
+    // Test search functionality
+    std::cout << "Testing search functionality..." << std::endl;
+
+    for (int key = 1; key <= 10; key++) {
+        std::cout << "\nSearching for key " << key << "..." << std::endl;
+        BTreeNode* result = tree.search(key);
+        if (result) {
+            std::cout << "Key " << key << " found in node with keys: ";
+            for (int i = 0; i < result->numKeys; i++) {
+                std::cout << result->keys[i] << " ";
+            }
+            std::cout << std::endl;
+        } else {
+            std::cout << "Key " << key << " not found!" << std::endl;
+        }
+    }
+
+    // Test for a non-existent key
+    int nonExistentKey = 15;
+    std::cout << "\nSearching for a non-existent key (" << nonExistentKey << ")..." << std::endl;
+    BTreeNode* result = tree.search(nonExistentKey);
+    if (result) {
+        std::cout << "Non-existent key " << nonExistentKey << " found in node with keys: ";
+        for (int i = 0; i < result->numKeys; i++) {
+            std::cout << result->keys[i] << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Non-existent key " << nonExistentKey << " not found!" << std::endl;
+    }
+
     return 0;
 }
