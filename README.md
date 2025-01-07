@@ -18,11 +18,10 @@ Learned:
 - Tokenization, parsing, and AST construction for SQL-like syntax.
 
 # Inspiration:
-- The design and implementation of miniDB drew inspiration from the following seminal works in distributed systems and storage architecture:
+ The design and implementation of miniDB drew inspiration from the following seminal works in distributed systems and storage architecture:
 - [MapReduce: Simplified Data Processing on Large Clusters by Jeffrey Dean and Sanjay Ghemawat]([url](https://static.googleusercontent.com/media/research.google.com/en//archive/mapreduce-osdi04.pdf))
 This paper influenced the conceptualization of data processing workflows and the efficient handling of CRUD operations within miniDB.
-
--[Bigtable: A Distributed Storage System for Structured Data by Fay Chang, Jeffrey Dean, Sanjay Ghemawat.]([url](https://static.googleusercontent.com/media/research.google.com/en//archive/bigtable-osdi06.pdf))
+- [Bigtable: A Distributed Storage System for Structured Data by Fay Chang, Jeffrey Dean, Sanjay Ghemawat.]([url](https://static.googleusercontent.com/media/research.google.com/en//archive/bigtable-osdi06.pdf))
 The Bigtable model's simplicity and scalability informed the approach to schema design and data management in miniDB.
 
 # What's next?
