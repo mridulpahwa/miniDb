@@ -12,7 +12,7 @@ Learned:
   -Advanced data structure implementation, particularly B-Trees.
   -Tokenization, parsing, and AST construction for SQL-like syntax.
 
-# Leanred
+# Learned
 - Backend development and system design principles for relational database systems.
 - Advanced data structure implementation, particularly B-Trees.
 - Tokenization, parsing, and AST construction for SQL-like syntax.
@@ -25,7 +25,6 @@ This paper influenced the conceptualization of data processing workflows and the
 The Bigtable model's simplicity and scalability informed the approach to schema design and data management in miniDB.
 
 # What's next?
-
 - Implement multi-threading to improve query performance.
 Add indexing for faster search and retrieval of rows.
 Build a frontend interface for interactive database operations.
